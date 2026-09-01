@@ -1,0 +1,554 @@
+<meta charset="utf-8">
+<title>No Name, No Theme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --surface: #ffffff;
+    --surface-2: #ece8dd;
+    --text: #1c1a14;
+    --text-muted: #6d6858;
+    --border: #ddd7c6;
+    --accent: #cf9a1e;
+    --accent-text: #3a2c06;
+    --focus: #2f6fed;
+
+    --tag-stage: #eae5d6;
+    --tag-shadow: rgba(30, 25, 10, 0.28);
+    --tag-yellow: #f5c518;
+    --tag-white: #fdfcf8;
+    --tag-ink: #15130d;
+    --tag-badge-bg: #15130d;
+    --tag-badge-text: #f5f0e0;
+    --tag-border: rgba(21, 19, 13, 0.14);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16150f;
+      --surface: #1f1d15;
+      --surface-2: #262319;
+      --text: #efe9d8;
+      --text-muted: #a39d88;
+      --border: #38341f;
+      --accent: #e0ac2c;
+      --accent-text: #1c1502;
+      --focus: #5b93ff;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #16150f;
+    --surface: #1f1d15;
+    --surface-2: #262319;
+    --text: #efe9d8;
+    --text-muted: #a39d88;
+    --border: #38341f;
+    --accent: #e0ac2c;
+    --accent-text: #1c1502;
+    --focus: #5b93ff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: clamp(20px, 4vw, 48px);
+    min-height: 100vh;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  .page-head {
+    margin-bottom: 28px;
+  }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .page-head h1 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 6px 0 8px;
+    text-wrap: balance;
+  }
+
+  .page-head p {
+    color: var(--text-muted);
+    max-width: 62ch;
+    line-height: 1.55;
+    font-size: 0.95rem;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    gap: 32px;
+    align-items: start;
+  }
+
+  @media (max-width: 780px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Stage / Tag ---------- */
+
+  .stage {
+    background: var(--tag-stage);
+    border-radius: 20px;
+    padding: clamp(36px, 6vw, 64px) clamp(20px, 5vw, 40px) 48px;
+    display: flex;
+    justify-content: center;
+    position: sticky;
+    top: 24px;
+  }
+
+  @media (max-width: 780px) {
+    .stage { position: static; }
+  }
+
+  .tag-wrap {
+    position: relative;
+    width: min(320px, 100%);
+  }
+
+  .cord {
+    position: absolute;
+    top: -34px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 40px;
+    overflow: visible;
+  }
+
+  .tag {
+    position: relative;
+    background: var(--tag-yellow);
+    border-radius: 22px;
+    box-shadow: 0 22px 40px -18px var(--tag-shadow), 0 2px 0 var(--tag-border) inset;
+    padding: 40px 26px 28px;
+    color: var(--tag-ink);
+    border: 1px solid var(--tag-border);
+  }
+
+  .tag.is-white { background: var(--tag-white); }
+
+  .hole {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--tag-stage);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.18);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    background: var(--tag-badge-bg);
+    color: var(--tag-badge-text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    margin-bottom: 22px;
+    max-width: 100%;
+  }
+
+  .badge [contenteditable] {
+    outline: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tag-name {
+    font-weight: 900;
+    font-size: clamp(2rem, 8vw, 2.6rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    outline: none;
+    margin-bottom: 20px;
+    word-break: break-word;
+  }
+
+  .tag-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+
+  .tag-lines [contenteditable] {
+    outline: none;
+  }
+
+  [contenteditable]:hover {
+    background: rgba(21, 19, 13, 0.06);
+    border-radius: 4px;
+  }
+
+  [contenteditable]:focus {
+    background: rgba(21, 19, 13, 0.09);
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px var(--focus);
+  }
+
+  .barcode {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 34px;
+    justify-content: center; 
+  }
+
+  .barcode span {
+    display: block;
+    background: var(--tag-ink);
+    width: 2px;
+    height: 100%;
+  }
+  .barcode span:nth-child(3n) { width: 3px; }
+  .barcode span:nth-child(5n) { width: 1px; height: 80%; }
+  .barcode span:nth-child(7n) { height: 60%; }
+  .barcode span:nth-child(11n) { width: 4px; }
+
+  .barcode-caption {
+    margin-top: 6px;
+    text-align: center;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--tag-ink);
+  }
+
+  .barcode-caption [contenteditable] {
+    outline: none;
+  }
+
+  /* ---------- Panel ---------- */
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+  }
+
+  .card h2 {
+    font-size: 0.72rem;
+    font-family: "JetBrains Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+
+  .swatches {
+    display: flex;
+    gap: 10px;
+  }
+
+  .swatch {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 8px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .swatch:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .swatch.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  .swatch-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  .swatch-dot.yellow { background: var(--tag-yellow); }
+  .swatch-dot.white { background: var(--tag-white); }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .row p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .switch {
+    position: relative;
+    width: 40px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .switch input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .switch-track {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 999px;
+    transition: background 0.15s ease;
+  }
+
+  .switch-track::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    transition: transform 0.15s ease;
+  }
+
+  .switch input:checked + .switch-track {
+    background: var(--accent);
+  }
+
+  .switch input:checked + .switch-track::after {
+    transform: translateX(16px);
+  }
+
+  .switch input:focus-visible + .switch-track {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 11px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--text);
+    color: var(--bg);
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+
+  .btn:hover { opacity: 0.9; }
+  .btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .btn.ghost {
+    background: transparent;
+    color: var(--text);
+  }
+
+  .note {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+  }
+
+  .note strong { color: var(--text); }
+
+  /* ---------- Print ---------- */
+
+  @media print {
+    body * { visibility: hidden; }
+    .stage, .stage * { visibility: visible; }
+    .stage {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+    [contenteditable]:hover, [contenteditable]:focus {
+      background: none;
+      box-shadow: none;
+    }
+  }
+</style>
+
+<div class="page">
+  <div class="page-head">
+    <div class="eyebrow">Identity Tag</div>
+    <h1>No Name, No Theme</h1>
+    <p>Click any text on the tag to edit it in place. Pick a fill, keep or drop the barcode, then print or screenshot.</p>
+  </div>
+
+  <div class="layout">
+    <div class="stage">
+      <div class="tag-wrap">
+        <svg class="cord" viewBox="0 0 60 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M30 40 C 8 34, 8 6, 30 2 C 52 6, 52 34, 30 40" stroke="#15130d" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+
+        <div class="tag" id="tag">
+          <div class="hole"></div>
+
+          <div class="badge">
+            <span contenteditable="true" spellcheck="false" id="badgeText">no name® / no theme.</span>
+          </div>
+
+          <div class="tag-name" contenteditable="true" spellcheck="false" id="tagName">Alex</div>
+
+          <div class="tag-lines">
+            <div contenteditable="true" spellcheck="false">human being</div>
+            <div contenteditable="true" spellcheck="false">floor member</div>
+            <div contenteditable="true" spellcheck="false">nice person</div>
+          </div>
+
+          <div class="barcode" id="barcode"></div>
+          <div class="barcode-caption" id="barcodeCaption">
+            <span contenteditable="true" spellcheck="false">9th floor resident</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="card">
+        <h2>Fill</h2>
+        <div class="swatches">
+          <button class="swatch active" id="fillYellow" type="button">
+            <span class="swatch-dot yellow"></span> Yellow
+          </button>
+          <button class="swatch" id="fillWhite" type="button">
+            <span class="swatch-dot white"></span> White
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div>
+            <h2 style="margin-bottom:4px;">Barcode</h2>
+            <p>Decorative only — not scannable.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="barcodeToggle" checked>
+            <span class="switch-track"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Export</h2>
+        <button class="btn" id="printBtn" type="button">Print / Save as PDF</button>
+      </div>
+
+      <div class="card note">
+        <strong>On QR codes:</strong> a code baked straight into the tag (a URL, vCard, wifi login) can never change once printed. A <strong>dynamic</strong> QR instead points at a short link you control — the tag stays put, and you swap where that link redirects whenever you like. That needs a small redirect service running somewhere.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var tag = document.getElementById('tag');
+    var fillYellow = document.getElementById('fillYellow');
+    var fillWhite = document.getElementById('fillWhite');
+    var barcodeToggle = document.getElementById('barcodeToggle');
+    var barcode = document.getElementById('barcode');
+    var barcodeCaption = document.getElementById('barcodeCaption');
+    var printBtn = document.getElementById('printBtn');
+
+    function setFill(isWhite) {
+      tag.classList.toggle('is-white', isWhite);
+      fillYellow.classList.toggle('active', !isWhite);
+      fillWhite.classList.toggle('active', isWhite);
+    }
+
+    fillYellow.addEventListener('click', function () { setFill(false); });
+    fillWhite.addEventListener('click', function () { setFill(true); });
+
+    function renderBarcode() {
+      barcode.innerHTML = '';
+      barcodeCaption.style.display = barcodeToggle.checked ? '' : 'none';
+      if (!barcodeToggle.checked) return;
+      var bars = 46;
+      for (var i = 0; i < bars; i++) {
+        barcode.appendChild(document.createElement('span'));
+      }
+    }
+    barcodeToggle.addEventListener('change', renderBarcode);
+    renderBarcode();
+
+    printBtn.addEventListener('click', function () { window.print(); });
+
+    // Keep single-line editable fields tidy: Enter commits instead of adding a line break.
+    document.querySelectorAll('[contenteditable]').forEach(function (el) {
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          el.blur();
+        }
+      });
+      el.addEventListener('paste', function (e) {
+        e.preventDefault();
+        var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
+      });
+    });
+  })();
+</script>
