@@ -1,4 +1,5 @@
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>No Name, No Theme</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -108,6 +109,12 @@
 
   @media (max-width: 780px) {
     .layout { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 420px) {
+    .card { padding: 14px; }
+    .tag { padding: 32px 18px 22px; }
+    .row { flex-wrap: wrap; }
   }
 
   /* ---------- Stage / Tag ---------- */
@@ -282,7 +289,12 @@
 
   .swatches {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
+  }
+
+  .swatches .swatch {
+    min-width: 120px;
   }
 
   .swatch {
