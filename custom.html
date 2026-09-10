@@ -1,0 +1,547 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Custom Photo Tag</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --surface: #ffffff;
+    --surface-2: #ece8dd;
+    --text: #1c1a14;
+    --text-muted: #6d6858;
+    --border: #ddd7c6;
+    --accent: #cf9a1e;
+    --accent-text: #3a2c06;
+    --focus: #2f6fed;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16150f;
+      --surface: #1f1d15;
+      --surface-2: #262319;
+      --text: #efe9d8;
+      --text-muted: #a39d88;
+      --border: #38341f;
+      --accent: #e0ac2c;
+      --accent-text: #1c1502;
+      --focus: #5b93ff;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #16150f;
+    --surface: #1f1d15;
+    --surface-2: #262319;
+    --text: #efe9d8;
+    --text-muted: #a39d88;
+    --border: #38341f;
+    --accent: #e0ac2c;
+    --accent-text: #1c1502;
+    --focus: #5b93ff;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: clamp(20px, 4vw, 48px);
+    min-height: 100vh;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  .page-head {
+    margin-bottom: 28px;
+  }
+
+  .back-link {
+    display: inline-block;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-bottom: 10px;
+  }
+
+  .back-link:hover { color: var(--accent); }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .page-head h1 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 6px 0 8px;
+    text-wrap: balance;
+  }
+
+  .page-head p {
+    color: var(--text-muted);
+    max-width: 62ch;
+    line-height: 1.55;
+    font-size: 0.95rem;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    gap: 32px;
+    align-items: start;
+  }
+
+  @media (max-width: 780px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 420px) {
+    .card { padding: 14px; }
+  }
+
+  /* ---------- Stage ---------- */
+
+  .stage {
+    background: var(--surface-2);
+    border-radius: 20px;
+    padding: clamp(12px, 3vw, 24px);
+    position: sticky;
+    top: 24px;
+  }
+
+  @media (max-width: 780px) {
+    .stage { position: static; }
+  }
+
+  .image-stage {
+    position: relative;
+    width: 100%;
+    min-height: 320px;
+    max-height: min(70vh, 640px);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    touch-action: none;
+  }
+
+  #stageImage[hidden] {
+    display: none;
+  }
+
+  #stageImage {
+    max-width: 100%;
+    max-height: min(70vh, 640px);
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .upload-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .upload-placeholder:hover {
+    background: rgba(0, 0, 0, 0.03);
+    color: var(--text);
+  }
+
+  .upload-icon {
+    font-size: 2rem;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .upload-placeholder.is-hidden { display: none; }
+
+  /* ---------- Text boxes ---------- */
+
+  .textbox {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 90%;
+  }
+
+  .tb-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--text);
+    color: var(--bg);
+    border-radius: 8px 8px 0 0;
+    padding: 3px 6px;
+    cursor: grab;
+    touch-action: none;
+    opacity: 0.85;
+  }
+
+  .tb-handle:active { cursor: grabbing; }
+
+  .tb-grip {
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    flex: 1;
+    text-align: center;
+  }
+
+  .tb-delete {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+
+  .tb-delete:hover { background: rgba(255, 255, 255, 0.2); }
+  .tb-delete:focus-visible { outline: 2px solid var(--focus); }
+
+  .tb-content {
+    background: rgba(255, 255, 255, 0.88);
+    color: #1c1a14;
+    font-weight: 700;
+    font-size: clamp(0.95rem, 2.4vw, 1.3rem);
+    line-height: 1.3;
+    padding: 8px 12px;
+    border-radius: 0 0 8px 8px;
+    outline: none;
+    min-width: 60px;
+    text-align: center;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .tb-content:empty::before {
+    content: attr(data-placeholder);
+    color: rgba(28, 26, 20, 0.45);
+    font-weight: 600;
+  }
+
+  .tb-content:focus {
+    box-shadow: 0 0 0 2px var(--focus);
+  }
+
+  .textbox.is-front { z-index: 999; }
+
+  /* ---------- Panel (shared look with index.html) ---------- */
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+  }
+
+  .card h2 {
+    font-size: 0.72rem;
+    font-family: "JetBrains Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 11px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--text);
+    color: var(--bg);
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+
+  .btn:hover { opacity: 0.9; }
+  .btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .btn.ghost {
+    background: transparent;
+    color: var(--text);
+  }
+
+  .btn + .btn { margin-top: 10px; }
+
+  .note {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin: 10px 0 0;
+  }
+
+  /* ---------- Print ---------- */
+
+  @media print {
+    @page { margin: 0; }
+
+    * {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    body { padding: 0; background: #fff; }
+
+    .page-head, .panel { display: none; }
+
+    .layout { display: block; }
+
+    .stage {
+      position: static;
+      width: 100%;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      border-radius: 0;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .image-stage {
+      max-height: none;
+      border-radius: 0;
+    }
+
+    .tb-handle { display: none; }
+    .tb-content { background: transparent; box-shadow: none; }
+  }
+</style>
+
+<div class="page">
+  <div class="page-head">
+    <a class="back-link" href="index.html">&larr; Back to tag maker</a>
+    <div class="eyebrow">Custom Photo Tag</div>
+    <h1>Upload a photo, add your own text</h1>
+    <p>Upload an image, then add text boxes on top of it. Drag the grip to move a box, click the text to edit it, and use &times; to remove one.</p>
+  </div>
+
+  <div class="layout">
+    <div class="stage">
+      <div class="image-stage" id="imageStage">
+        <label class="upload-placeholder" id="uploadPlaceholder" for="fileInput">
+          <span class="upload-icon">+</span>
+          <span>Click to upload an image</span>
+        </label>
+        <img id="stageImage" alt="Uploaded photo" hidden>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="card">
+        <h2>Image</h2>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+        <button class="btn ghost" id="replaceBtn" type="button">Choose / Replace Image</button>
+      </div>
+
+      <div class="card">
+        <h2>Text</h2>
+        <button class="btn" id="addTextBtn" type="button">+ Add Text Box</button>
+        <p class="note">Drag the dark grip bar to reposition a box. Click the text itself to type. The most recently touched box moves to the front.</p>
+      </div>
+
+      <div class="card">
+        <h2>Export</h2>
+        <button class="btn" id="printBtn" type="button">Print / Save as PDF</button>
+      </div>
+
+      <div class="card note">
+        Everything here stays in your browser &mdash; nothing is uploaded to a server. Reloading the page clears the image and text boxes, so export or screenshot before you leave.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var imageStage = document.getElementById('imageStage');
+    var uploadPlaceholder = document.getElementById('uploadPlaceholder');
+    var stageImage = document.getElementById('stageImage');
+    var fileInput = document.getElementById('fileInput');
+    var replaceBtn = document.getElementById('replaceBtn');
+    var addTextBtn = document.getElementById('addTextBtn');
+    var printBtn = document.getElementById('printBtn');
+
+    var currentObjectUrl = null;
+    var zCounter = 1;
+
+    // ---- Image upload ----
+
+    replaceBtn.addEventListener('click', function () { fileInput.click(); });
+
+    fileInput.addEventListener('change', function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+
+      if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+      currentObjectUrl = URL.createObjectURL(file);
+
+      stageImage.src = currentObjectUrl;
+      stageImage.hidden = false;
+      uploadPlaceholder.classList.add('is-hidden');
+    });
+
+    // ---- Text box creation ----
+
+    function makeEditableTidy(el) {
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          el.blur();
+        }
+      });
+      el.addEventListener('paste', function (e) {
+        e.preventDefault();
+        var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
+      });
+    }
+
+    function bringToFront(box) {
+      zCounter += 1;
+      box.style.zIndex = zCounter;
+    }
+
+    function addTextBox() {
+      var box = document.createElement('div');
+      box.className = 'textbox';
+      box.style.left = '50%';
+      box.style.top = '50%';
+
+      var handle = document.createElement('div');
+      handle.className = 'tb-handle';
+
+      var grip = document.createElement('span');
+      grip.className = 'tb-grip';
+      grip.textContent = '⠷ drag';
+
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'tb-delete';
+      del.setAttribute('aria-label', 'Delete text box');
+      del.textContent = '×';
+
+      var content = document.createElement('div');
+      content.className = 'tb-content';
+      content.contentEditable = 'true';
+      content.spellcheck = false;
+      content.setAttribute('data-placeholder', 'Your text here');
+
+      handle.appendChild(grip);
+      handle.appendChild(del);
+      box.appendChild(handle);
+      box.appendChild(content);
+      imageStage.appendChild(box);
+
+      bringToFront(box);
+      makeEditableTidy(content);
+
+      // Delete
+      del.addEventListener('click', function (e) {
+        e.stopPropagation();
+        box.remove();
+      });
+
+      // Bring to front on any interaction
+      box.addEventListener('pointerdown', function () { bringToFront(box); });
+
+      // Dragging via the handle only, so text editing isn't hijacked
+      var dragging = false;
+      var offsetX = 0;
+      var offsetY = 0;
+
+      handle.addEventListener('pointerdown', function (e) {
+        if (e.target === del) return;
+        dragging = true;
+        handle.setPointerCapture(e.pointerId);
+
+        var boxRect = box.getBoundingClientRect();
+        offsetX = e.clientX - (boxRect.left + boxRect.width / 2);
+        offsetY = e.clientY - (boxRect.top + boxRect.height / 2);
+      });
+
+      handle.addEventListener('pointermove', function (e) {
+        if (!dragging) return;
+
+        var stageRect = imageStage.getBoundingClientRect();
+        var centerX = e.clientX - offsetX - stageRect.left;
+        var centerY = e.clientY - offsetY - stageRect.top;
+
+        var leftPct = (centerX / stageRect.width) * 100;
+        var topPct = (centerY / stageRect.height) * 100;
+
+        var halfWPct = (box.offsetWidth / 2 / stageRect.width) * 100;
+        var halfHPct = (box.offsetHeight / 2 / stageRect.height) * 100;
+
+        leftPct = Math.min(Math.max(leftPct, halfWPct), 100 - halfWPct);
+        topPct = Math.min(Math.max(topPct, halfHPct), 100 - halfHPct);
+
+        box.style.left = leftPct + '%';
+        box.style.top = topPct + '%';
+      });
+
+      handle.addEventListener('pointerup', function (e) {
+        dragging = false;
+        handle.releasePointerCapture(e.pointerId);
+      });
+
+      content.focus();
+    }
+
+    addTextBtn.addEventListener('click', addTextBox);
+
+    // ---- Export ----
+
+    printBtn.addEventListener('click', function () { window.print(); });
+  })();
+</script>
