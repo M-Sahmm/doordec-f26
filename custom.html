@@ -201,42 +201,49 @@
   }
 
   .tb-handle {
-    display: flex;
+    display: none;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
+    gap: 2px;
     background: var(--text);
     color: var(--bg);
     border-radius: 8px 8px 0 0;
-    padding: 3px 6px;
-    cursor: grab;
-    touch-action: none;
-    opacity: 0.85;
+    padding: 3px 4px;
+    opacity: 0.92;
   }
 
-  .tb-handle:active { cursor: grabbing; }
+  .textbox.is-selected .tb-handle { display: flex; }
 
   .tb-grip {
     font-size: 0.75rem;
     letter-spacing: 1px;
     flex: 1;
     text-align: center;
+    padding: 0 6px;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
   }
 
-  .tb-delete {
+  .tb-grip:active { cursor: grabbing; }
+
+  .tb-mini-btn {
     appearance: none;
     border: none;
     background: transparent;
     color: inherit;
-    font-size: 0.95rem;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
     line-height: 1;
     cursor: pointer;
-    padding: 2px 4px;
+    padding: 4px 6px;
     border-radius: 4px;
   }
 
-  .tb-delete:hover { background: rgba(255, 255, 255, 0.2); }
-  .tb-delete:focus-visible { outline: 2px solid var(--focus); }
+  .tb-mini-btn:hover { background: rgba(255, 255, 255, 0.2); }
+  .tb-mini-btn:focus-visible { outline: 2px solid var(--focus); }
+
+  .tb-delete { font-size: 0.9rem; }
 
   .tb-content {
     background: rgba(255, 255, 255, 0.88);
@@ -259,11 +266,25 @@
     font-weight: 600;
   }
 
-  .tb-content:focus {
+  .textbox.is-selected .tb-content {
     box-shadow: 0 0 0 2px var(--focus);
   }
 
-  .textbox.is-front { z-index: 999; }
+  .tb-resize {
+    display: none;
+    position: absolute;
+    right: -5px;
+    bottom: -5px;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background: var(--accent);
+    border: 2px solid var(--surface);
+    cursor: nwse-resize;
+    touch-action: none;
+  }
+
+  .textbox.is-selected .tb-resize { display: block; }
 
   /* ---------- Panel (shared look with index.html) ---------- */
 
@@ -353,8 +374,8 @@
       border-radius: 0;
     }
 
-    .tb-handle { display: none; }
-    .tb-content { background: transparent; box-shadow: none; }
+    .tb-handle, .tb-resize { display: none !important; }
+    .textbox.is-selected .tb-content { box-shadow: none; }
   }
 </style>
 
@@ -363,7 +384,7 @@
     <a class="back-link" href="index.html">&larr; Back to tag maker</a>
     <div class="eyebrow">Custom Photo Tag</div>
     <h1>Upload a photo, add your own text</h1>
-    <p>Upload an image, then add text boxes on top of it. Drag the grip to move a box, click the text to edit it, and use &times; to remove one.</p>
+    <p>Upload an image, then add text boxes on top of it. Click a box to select it — its toolbar (drag, font size, background, delete) and a resize handle appear only while it's selected. Click anywhere else to hide them again.</p>
   </div>
 
   <div class="layout">
@@ -387,13 +408,14 @@
       <div class="card">
         <h2>Text</h2>
         <button class="btn" id="addTextBtn" type="button">+ Add Text Box</button>
-        <p class="note">Drag the dark grip bar to reposition a box. Click the text itself to type. The most recently touched box moves to the front.</p>
+        <p class="note">Select a box to reveal its controls: <strong>A&minus;/A+</strong> resize the text, the <strong>bg</strong> button cycles white / matched-to-photo / transparent backgrounds, the grip drags it, and the corner handle resizes the box itself.</p>
       </div>
 
       <div class="card">
         <h2>Export</h2>
         <button class="btn" id="printBtn" type="button">Print / Save as PDF</button>
       </div>
+
     </div>
   </div>
 </div>
@@ -411,7 +433,21 @@
     var currentObjectUrl = null;
     var zCounter = 1;
 
-    // ---- Image upload ----
+    // ---- Image upload + a hidden canvas for color sampling ----
+
+    var sampleCanvas = document.createElement('canvas');
+    var sampleCtx = sampleCanvas.getContext('2d');
+    var canvasReady = false;
+
+    function prepareSampleCanvas() {
+      if (!stageImage.naturalWidth) { canvasReady = false; return; }
+      sampleCanvas.width = stageImage.naturalWidth;
+      sampleCanvas.height = stageImage.naturalHeight;
+      sampleCtx.drawImage(stageImage, 0, 0);
+      canvasReady = true;
+    }
+
+    stageImage.addEventListener('load', prepareSampleCanvas);
 
     replaceBtn.addEventListener('click', function () { fileInput.click(); });
 
@@ -422,10 +458,61 @@
       if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
       currentObjectUrl = URL.createObjectURL(file);
 
+      canvasReady = false;
       stageImage.src = currentObjectUrl;
       stageImage.hidden = false;
       uploadPlaceholder.classList.add('is-hidden');
     });
+
+    // Sample the average color of the image directly beneath an element.
+    function sampleAverageColor(el) {
+      if (!canvasReady) return null;
+
+      var imgRect = stageImage.getBoundingClientRect();
+      var elRect = el.getBoundingClientRect();
+      var scaleX = stageImage.naturalWidth / imgRect.width;
+      var scaleY = stageImage.naturalHeight / imgRect.height;
+
+      var sx = Math.max(0, Math.min(Math.round((elRect.left - imgRect.left) * scaleX), sampleCanvas.width - 1));
+      var sy = Math.max(0, Math.min(Math.round((elRect.top - imgRect.top) * scaleY), sampleCanvas.height - 1));
+      var sw = Math.max(1, Math.min(Math.round(elRect.width * scaleX), sampleCanvas.width - sx));
+      var sh = Math.max(1, Math.min(Math.round(elRect.height * scaleY), sampleCanvas.height - sy));
+
+      var data;
+      try {
+        data = sampleCtx.getImageData(sx, sy, sw, sh).data;
+      } catch (err) {
+        return null;
+      }
+
+      var r = 0, g = 0, b = 0, count = 0;
+      var step = 16; // sample every 4th pixel (4 channels x 4)
+      for (var i = 0; i < data.length; i += step) {
+        r += data[i]; g += data[i + 1]; b += data[i + 2];
+        count++;
+      }
+      if (!count) return null;
+      return { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) };
+    }
+
+    // ---- Selection (controls only show for the selected box) ----
+
+    function selectBox(box) {
+      document.querySelectorAll('.textbox.is-selected').forEach(function (b) {
+        if (b !== box) b.classList.remove('is-selected');
+      });
+      box.classList.add('is-selected');
+    }
+
+    function deselectAll() {
+      document.querySelectorAll('.textbox.is-selected').forEach(function (b) {
+        b.classList.remove('is-selected');
+      });
+    }
+
+    document.addEventListener('pointerdown', function (e) {
+      if (!e.target.closest('.textbox')) deselectAll();
+    }, true);
 
     // ---- Text box creation ----
 
@@ -457,13 +544,32 @@
       var handle = document.createElement('div');
       handle.className = 'tb-handle';
 
+      var fontDownBtn = document.createElement('button');
+      fontDownBtn.type = 'button';
+      fontDownBtn.className = 'tb-mini-btn';
+      fontDownBtn.setAttribute('aria-label', 'Decrease text size');
+      fontDownBtn.title = 'Smaller text';
+      fontDownBtn.textContent = 'A-';
+
+      var fontUpBtn = document.createElement('button');
+      fontUpBtn.type = 'button';
+      fontUpBtn.className = 'tb-mini-btn';
+      fontUpBtn.setAttribute('aria-label', 'Increase text size');
+      fontUpBtn.title = 'Larger text';
+      fontUpBtn.textContent = 'A+';
+
+      var bgBtn = document.createElement('button');
+      bgBtn.type = 'button';
+      bgBtn.className = 'tb-mini-btn';
+      bgBtn.setAttribute('aria-label', 'Cycle text background');
+
       var grip = document.createElement('span');
       grip.className = 'tb-grip';
-      grip.textContent = '⠷ drag';
+      grip.textContent = '⠷';
 
       var del = document.createElement('button');
       del.type = 'button';
-      del.className = 'tb-delete';
+      del.className = 'tb-mini-btn tb-delete';
       del.setAttribute('aria-label', 'Delete text box');
       del.textContent = '×';
 
@@ -473,45 +579,119 @@
       content.spellcheck = false;
       content.setAttribute('data-placeholder', 'Your text here');
 
+      var resizeHandle = document.createElement('div');
+      resizeHandle.className = 'tb-resize';
+      resizeHandle.setAttribute('aria-hidden', 'true');
+
+      handle.appendChild(fontDownBtn);
+      handle.appendChild(fontUpBtn);
+      handle.appendChild(bgBtn);
       handle.appendChild(grip);
       handle.appendChild(del);
       box.appendChild(handle);
       box.appendChild(content);
+      box.appendChild(resizeHandle);
       imageStage.appendChild(box);
 
       bringToFront(box);
+      selectBox(box);
       makeEditableTidy(content);
 
-      // Delete
+      // ---- Background mode: white pill / matched to photo / transparent ----
+
+      var bgModes = ['white', 'match', 'transparent'];
+      var bgMode = 'white';
+
+      function applyBgMode() {
+        if (bgMode === 'white') {
+          content.style.background = 'rgba(255, 255, 255, 0.88)';
+          content.style.color = '#1c1a14';
+          content.style.textShadow = 'none';
+          bgBtn.textContent = 'bg: w';
+          bgBtn.title = 'Background: white (click to cycle)';
+        } else if (bgMode === 'match') {
+          var sampled = sampleAverageColor(content);
+          if (sampled) {
+            content.style.background = 'rgb(' + sampled.r + ', ' + sampled.g + ', ' + sampled.b + ')';
+            var luminance = 0.299 * sampled.r + 0.587 * sampled.g + 0.114 * sampled.b;
+            content.style.color = luminance > 140 ? '#1c1a14' : '#f4f1ea';
+          } else {
+            content.style.background = 'rgba(255, 255, 255, 0.5)';
+            content.style.color = '#1c1a14';
+          }
+          content.style.textShadow = 'none';
+          bgBtn.textContent = 'bg: match';
+          bgBtn.title = 'Background: matched to photo (click to cycle)';
+        } else {
+          content.style.background = 'transparent';
+          content.style.color = '#ffffff';
+          content.style.textShadow = '0 1px 3px rgba(0,0,0,0.85), 0 0 6px rgba(0,0,0,0.55)';
+          bgBtn.textContent = 'bg: none';
+          bgBtn.title = 'Background: transparent (click to cycle)';
+        }
+      }
+
+      applyBgMode();
+
+      bgBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        bgMode = bgModes[(bgModes.indexOf(bgMode) + 1) % bgModes.length];
+        applyBgMode();
+      });
+
+      // ---- Font size ----
+
+      function stepFontSize(delta) {
+        var current = parseFloat(getComputedStyle(content).fontSize);
+        var next = Math.max(10, Math.min(96, current + delta));
+        content.style.fontSize = next + 'px';
+      }
+
+      fontDownBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        stepFontSize(-2);
+      });
+
+      fontUpBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        stepFontSize(2);
+      });
+
+      // ---- Delete ----
+
       del.addEventListener('click', function (e) {
         e.stopPropagation();
         box.remove();
       });
 
-      // Bring to front on any interaction
-      box.addEventListener('pointerdown', function () { bringToFront(box); });
+      // ---- Selection + layering on any interaction ----
 
-      // Dragging via the handle only, so text editing isn't hijacked
-      var dragging = false;
-      var offsetX = 0;
-      var offsetY = 0;
-
-      handle.addEventListener('pointerdown', function (e) {
-        if (e.target === del) return;
-        dragging = true;
-        handle.setPointerCapture(e.pointerId);
-
-        var boxRect = box.getBoundingClientRect();
-        offsetX = e.clientX - (boxRect.left + boxRect.width / 2);
-        offsetY = e.clientY - (boxRect.top + boxRect.height / 2);
+      box.addEventListener('pointerdown', function () {
+        selectBox(box);
+        bringToFront(box);
       });
 
-      handle.addEventListener('pointermove', function (e) {
+      // ---- Dragging via the grip only, so text editing isn't hijacked ----
+
+      var dragging = false;
+      var dragOffsetX = 0;
+      var dragOffsetY = 0;
+
+      grip.addEventListener('pointerdown', function (e) {
+        dragging = true;
+        grip.setPointerCapture(e.pointerId);
+
+        var boxRect = box.getBoundingClientRect();
+        dragOffsetX = e.clientX - (boxRect.left + boxRect.width / 2);
+        dragOffsetY = e.clientY - (boxRect.top + boxRect.height / 2);
+      });
+
+      grip.addEventListener('pointermove', function (e) {
         if (!dragging) return;
 
         var stageRect = imageStage.getBoundingClientRect();
-        var centerX = e.clientX - offsetX - stageRect.left;
-        var centerY = e.clientY - offsetY - stageRect.top;
+        var centerX = e.clientX - dragOffsetX - stageRect.left;
+        var centerY = e.clientY - dragOffsetY - stageRect.top;
 
         var leftPct = (centerX / stageRect.width) * 100;
         var topPct = (centerY / stageRect.height) * 100;
@@ -526,9 +706,55 @@
         box.style.top = topPct + '%';
       });
 
-      handle.addEventListener('pointerup', function (e) {
+      grip.addEventListener('pointerup', function (e) {
         dragging = false;
-        handle.releasePointerCapture(e.pointerId);
+        grip.releasePointerCapture(e.pointerId);
+        if (bgMode === 'match') applyBgMode();
+      });
+
+      // ---- Resizing the box itself via the corner handle ----
+
+      var resizing = false;
+      var startWidth = 0;
+      var startHeight = 0;
+      var startX = 0;
+      var startY = 0;
+
+      resizeHandle.addEventListener('pointerdown', function (e) {
+        e.stopPropagation();
+        resizing = true;
+        resizeHandle.setPointerCapture(e.pointerId);
+
+        startWidth = content.offsetWidth;
+        startHeight = content.offsetHeight;
+        startX = e.clientX;
+        startY = e.clientY;
+
+        // Switch from shrink-to-fit sizing to an explicit, centered box.
+        content.style.display = 'flex';
+        content.style.alignItems = 'center';
+        content.style.justifyContent = 'center';
+        content.style.overflow = 'hidden';
+      });
+
+      resizeHandle.addEventListener('pointermove', function (e) {
+        if (!resizing) return;
+
+        var stageRect = imageStage.getBoundingClientRect();
+        var maxWidth = stageRect.width * 0.9;
+        var maxHeight = stageRect.height * 0.9;
+
+        var newWidth = Math.min(maxWidth, Math.max(40, startWidth + (e.clientX - startX)));
+        var newHeight = Math.min(maxHeight, Math.max(30, startHeight + (e.clientY - startY)));
+
+        content.style.width = newWidth + 'px';
+        content.style.height = newHeight + 'px';
+      });
+
+      resizeHandle.addEventListener('pointerup', function (e) {
+        resizing = false;
+        resizeHandle.releasePointerCapture(e.pointerId);
+        if (bgMode === 'match') applyBgMode();
       });
 
       content.focus();
